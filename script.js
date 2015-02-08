@@ -1,6 +1,6 @@
 $( document ).ready(function() {
 
-	var currentUser;
+	var currentUser = null;
 
 	$("#loginForm").hide();
 
@@ -19,10 +19,11 @@ $( document ).ready(function() {
 		user.set("username", $("#usernameSignUp").val());
 		user.set("password", $("#passwordSignUp").val());
 		user.set("email", 	$("#emailSignUp").val());
-
+		user.set("Friends", []);
 		user.signUp(null, {
 		  success: function(user) {
 		  	currentUser = Parse.User.current();
+
 		    // Hooray! Let them use the app now.
 		    clearSignUpSheet();
 		    $("#theForms").hide();
@@ -40,6 +41,7 @@ $( document ).ready(function() {
   		Parse.User.logIn($("#usernameLogin").val(), $("#passwordLogin").val(), {
 		  success: function(user) {
 		  	currentUser = Parse.User.current();
+		  	alert(currentUser);
 		  	clearSignUpSheet();
 		    $("#theForms").hide();
 		   	addProfileInformation(user);
@@ -66,15 +68,17 @@ function clearSignUpSheet(){
 }
 
 function addProfileInformation(user){
+
+
   	 $( "#bioHolder" ).append( "<div class=\"page-header\">" +
 		 					   "<h1>" + user.get("FirstName") + " " + user.get("LastName") + "<small></small></h1>" +
 							   "</div>" +
 	  						   "<p></p>" +
-	  						   "<p><a class=\"btn btn-primary btn-lg\" href=\"#\" role=\"button\">Message</a></p>" );
+	  						   "<p><a class=\"btn btn-primary btn-lg\" href=\"#\" role=\"button\">Edit</a></p>" );
 	 $("#navbarHolder").append(" <div id=\"stats\"> <ul class=\"nav navbar-nav navbar-left\">" +
 								"<li><a href=\"#\">Profile </a></li>" +
-								"<li class=\"\"><a href=\"#\">Friends <span class=\"badge\">4</span></a></li>" +
-								"<li class=\"\"><a href=\"#\">Messages <span class=\"badge\">4</span></a></li>" +
+								"<li class=\"\"><a id=\"friendRequests\">Friends <span class=\"badge\"><div id=\"numberRequestBadges\"</span></a></li>" +
+								"<li class=\"\"><a href=\"#\">Messages <span class=\"badge\"><div id=\"numberMessagesBadge\"</span></a></li>" +
 								"<li class=\"\"><a href=\"#\">Payment</a></li> " +
 								"</ul>" +
 								"<ul class=\"nav navbar-nav navbar-right\">" +
@@ -89,7 +93,7 @@ function addProfileInformation(user){
 								"</ul> </div>"); 
 
 	 $("#bottomInfoHolder").append(" <div class=\"col-md-4\">" +
-									"<h5> <u> Statistics </u> </h5>" +
+									"<h4 style=\"text-align: center\"> <u> Statistics </u> </h4>" +
 									"<p style=\"text-align: center;\"> Friends </p>" +
 									"<div class=\"progress\">" +
 									"<div class=\"progress-bar progress-bar-success progress-bar-striped\" role=\"progressbar\" aria-valuenow=\"40\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 40%\">" +
@@ -110,11 +114,120 @@ function addProfileInformation(user){
 									"</div>" +
 									"</div>" +
 									"<div class=\"col-md-4\">" +
-									"<h4> <u> Recent Payments </u> </h4>" +
+									"<h4 style=\"text-align: center\"> <u> Recent Payments </u> </h4>" +
 									"</div>" +
 									"<div class=\"col-md-4\">" +
-									"<h4> <u> Recent Reviews </u> </h4>" +
+									"<h4 style=\"text-align: center\"> <u> Recent Reviews </u> </h4>" +
 									"</div>");
+
+		
+		$("#friendRequests").on("click", function(evt) {
+			$("#searchResultsHolder").html("");
+		  	var query = new Parse.Query('FriendRequests');
+			query.equalTo("recipientUsername", user.get('username'));
+			query.find({
+			  success: function(results) {
+			  	//alert("LEngth is " + results.length);
+			  	var amtOfRequestsList = [];
+			  	for (var i = 0; i < results.length && amtOfRequestsList < 1; i++) { 
+
+			      var object = results[i];
+
+			      //alert(object.id + ' - ' + object.get('username'));
+			      if(object.get('currentStatus') == "Requested"){		
+			      	amtOfRequestsList += object;	      
+
+			   		 $("#searchResultsHolder").html($("#searchResultsHolder").html() + "<div class=\"panel panel-primary\">" +
+												"<div class=\"panel-heading\">" +
+												"<h2 class=\"panel-title\">" + "Friend Requests" +"</h2>" +
+												"</div>" +
+												"<div class=\"panel-body\">" +
+												object.get('currentStatus') + " - " + object.get('senderUsername') + " "+
+												"<a id=\"accept" + object.id + "\" class=\"btn btn-success\">Accept</a> " +
+												"<a id=\"delete" + object.id + "\" class=\"btn btn-danger\">Delete</a>" +
+												"</div>" +
+												"</div>"
+												);
+			   		 var objectId = object.id;
+			   		$("#accept" + objectId).click(function() {
+			   		 	var FriendRequests = Parse.Object.extend("FriendRequests");
+						
+						var query = new Parse.Query(FriendRequests);
+						query.get(objectId, {
+						  success: function(obj) {
+						    	obj.set('currentStatus', "Accepted");
+						    	obj.save();
+						    	$("#searchResultsHolder").html("");
+
+						    	var friendList = user.get('Friends');
+						    	alert(obj.get('senderUsername'));
+
+						    	var addOrNot = true;
+						    	for(var i = 0; i < friendList.length; i++){
+						    		if(friendList[i] == obj.get('senderUsername')){
+						    			addOrNot = false;
+						    		}
+						    	}
+						    	if(addOrNot)
+							    	friendList.push(obj.get('senderUsername'));
+						    	user.set('Friends', friendList);
+						    	user.save();
+
+						  },
+						  error: function(object, error) {
+						    // The object was not retrieved successfully.
+						    // error is a Parse.Error with an error code and message.
+						  }
+						});
+
+			   		 });
+
+			   		$("#delete" + objectId).click(function() {
+			   		 	var FriendRequests = Parse.Object.extend("FriendRequests");
+						
+						var query = new Parse.Query(FriendRequests);
+						query.get(objectId, {
+						  success: function(obj) {
+						    	obj.set('currentStatus', "Declined");
+						    	obj.save();
+						    	$("#searchResultsHolder").html("");
+						  },
+						  error: function(object, error) {
+						    // The object was not retrieved successfully.
+						    // error is a Parse.Error with an error code and message.
+						  }
+						});
+
+			   		 });
+			   	}
+			}
+			  //  $("#searchResultsHolder").html(object.id + ' - ' + object.get('username') + ' - ' + object.get('FirstName')+ ' - ' + object.get('email'));
+			    $("#sendRequest").click(function(){
+					var FriendRequest = Parse.Object.extend("FriendRequests");
+					var friendRequest = new FriendRequest();
+					friendRequest.set('currentStatus', 'Requested');
+					friendRequest.set('recipientUsername', object.get('username'));
+					friendRequest.set('senderUsername', user.get('username'));
+					friendRequest.save(null, {
+					  success: function(request) {
+					    // Execute any logic that should take place after the object is saved.
+					    alert('Success');
+					  },
+					  error: function(reqiest, error) {
+					    // Execute any logic that should take place if the save fails.
+					    // error is a Parse.Error with an error code and message.
+					    alert('Failed to create new object, with error code: ' + error.message);
+					  }
+					});
+				});
+			  },
+			  error: function(error) {
+			    alert("Error: " + error.code + " " + error.message);
+			  }
+			});
+
+		});
+
 
 		$("#searchButton").on("click", function(evt) {
 		  	
@@ -143,12 +256,31 @@ function addProfileInformation(user){
 												);
 
 			  //  $("#searchResultsHolder").html(object.id + ' - ' + object.get('username') + ' - ' + object.get('FirstName')+ ' - ' + object.get('email'));
-			    
+			    $("#sendRequest").click(function(){
+					var FriendRequest = Parse.Object.extend("FriendRequests");
+					var friendRequest = new FriendRequest();
+					friendRequest.set('currentStatus', 'Requested');
+					friendRequest.set('recipientUsername', object.get('username'));
+					friendRequest.set('senderUsername', user.get('username'));
+					friendRequest.save(null, {
+					  success: function(request) {
+					    // Execute any logic that should take place after the object is saved.
+					    alert('Success');
+					  },
+					  error: function(reqiest, error) {
+					    // Execute any logic that should take place if the save fails.
+					    // error is a Parse.Error with an error code and message.
+					    alert('Failed to create new object, with error code: ' + error.message);
+					  }
+					});
+				});
 			  },
 			  error: function(error) {
 			    alert("Error: " + error.code + " " + error.message);
 			  }
 			});
+
+
 
 		});
 }
