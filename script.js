@@ -91,12 +91,31 @@ function addProfileInformation(user){
 								"</li>" +
 								"</ul> </div>"); 
 
+	 var numFriends = user.get("Friends").length;
+	 var goalFriends;
+	 if(numFriends < 10){
+	 	goalFriends = 10;
+	 } else if (numFriends < 100){
+	 	goalFriends = 100;
+	 } else if (numFriends < 1000){
+	 	goalFriends = 1000;
+	 } else if (numFriends < 10000){
+	 	goalFriends = 10000;
+	 } else if (numFriends < 100000){
+	 	goalFriends = 100000;
+	 } else if (numFriends < 1000000){
+	 	goalFriends = 1000000;
+	 } else if (numFriends < 10000000){
+	 	goalFriends = 10000000;
+	 }
+	 var percentage = (numFriends / goalFriends) * 100;
+
 	 $("#bottomInfoHolder").append(" <div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Statistics </u> </h4>" +
-									"<p style=\"text-align: center;\"> Friends </p>" +
+									"<p style=\"text-align: center;\"> Friends (" + percentage + "%) </p>" +
 									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-success progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"40\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 40%\">" +
-									"<span class=\"sr-only\">40% Complete (success)</span>" +
+									"<div class=\"progress-bar progress-bar-success progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"" + percentage + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width:" + percentage +"%\">" +
+									"<span class=\"sr-only\">" + percentage + "% Complete (success)</span>" +
 									"</div>" +
 									"</div>" +
 									"<p style=\"text-align: center;\"> Transactions </p>" +
@@ -113,11 +132,11 @@ function addProfileInformation(user){
 									"</div>" +
 									"</div>" +
 									"<div class=\"col-md-2\">" +
-									"<h4 style=\"text-align: center\"> <u> Recent Payments </u> </h4>" +
+									"<h4 style=\"text-align: center\"> <u> Recieved </u> </h4>" +
 									"<div style=\"height: 25%; overflow-y: scroll; background-color: ; \" id=\"recentPayments\"></div>" + 
 									"</div>" +
 									"<div class=\"col-md-2\">" +
-									"<h4 style=\"text-align: center\"> <u> Recent Reviews </u> </h4>" +
+									"<h4 style=\"text-align: center\"> <u> Sent </u> </h4>" +
 									"</div>");
 
 		$("#recentPayments").html("");
@@ -134,7 +153,7 @@ function addProfileInformation(user){
 		      $("#recentPayments").html($("#recentPayments").html() + 
 											"<div class=\"panel panel-default\">" +
 											"<div class=\"panel-body\">" +
-											object.get('senderUsername') + ' - ' + object.get('moneyOwed') + 
+											object.get('senderUsername') + ' - $' + object.get('moneyOwed') + 
 											"</div>" +
 											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
 											"</div>");
@@ -148,7 +167,7 @@ function addProfileInformation(user){
 		$("#friendRequests").on("click", function(evt) {
 			$("#searchResultsHolder").html("");
 		  	var query = new Parse.Query('FriendRequests');
-			query.equalTo("recipientUsername", "tanay");
+			query.equalTo("recipientUsername", user.get('username'));
 			query.find({
 			  success: function(results) {
 			  	//alert("LEngth is " + results.length);
