@@ -31,7 +31,7 @@ $( document ).ready(function() {
 		  },
 		  error: function(user, error) {
 		    // Show the error message somewhere and let the user try again.
-		    alert("Error: " + error.code + " " + error.message);
+		    console.log("Error: " + error.code + " " + error.message);
 		  }
 		});
   	});
@@ -40,7 +40,7 @@ $( document ).ready(function() {
   		Parse.User.logIn($("#usernameLogin").val(), $("#passwordLogin").val(), {
 		  success: function(user) {
 		  	currentUser = Parse.User.current();
-		  	alert(currentUser);
+		  	console.log(currentUser);
 		  	clearSignUpSheet();
 		    $("#theForms").hide();
 		   	addProfileInformation(user);
@@ -48,7 +48,7 @@ $( document ).ready(function() {
 		   	//fillDataAtBottom(user);
 		  },
 		  error: function(user, error) {
-		  	 alert("Error: " + error.code + " " + error.message);
+		  	 console.log("Error: " + error.code + " " + error.message);
 		  }
 		});
   	});
@@ -75,7 +75,7 @@ function addProfileInformation(user){
 							   "<img style=\"\"src=\"" + get_gravatar(user.get('email'), 150) + "\" alt=\"\" class=\"img-circle\">" +
 							   //"</a>" +
 							   "</div>" +
-		 					   "<h1 style=\"background-color: rgba(255,255,255,0.5);\">" + user.get("FirstName") + " " + user.get("LastName") + "<small></small></h1>" +
+		 					   "<h1 style=\"background-color: rgba(255,255,255,.8);\">" + user.get("FirstName") + " " + user.get("LastName") + "<small></small></h1>" +
 							   "</div>" +
 	  						   "<p></p>" +
 	  						   "<p><a class=\"btn btn-primary btn-lg\" href=\"#\" role=\"button\">Edit</a></p>" );
@@ -85,7 +85,7 @@ function addProfileInformation(user){
 	 $("#navbarHolder").append(" <div id=\"stats\"> <ul class=\"nav navbar-nav navbar-left\">" +
 								"<li><a href=\"#\">Profile </a></li>" +
 								"<li class=\"\"><a id=\"friendRequests\">Requests  <span class=\"badge\"><div id=\"numberRequestBadges\"</span></a></li>" +
-								"<li class=\"\"><a href=\"#\">Messages <span class=\"badge\"><div id=\"numberMessagesBadge\"</span></a></li>" +
+								"<li class=\"\"><a id=\"paymentRequests\">Payments  <span class=\"badge\"><div id=\"numberPaymentRequests\"</span></a></li>" +
 								"</ul>" +
 								"<ul class=\"nav navbar-nav navbar-right\">" +
 								"<form class=\"navbar-form navbar-left\" role=\"search\">" +
@@ -117,27 +117,73 @@ function addProfileInformation(user){
 	 }
 	 var percentage = (numFriends / goalFriends) * 100;
 
+	
+	 $("#recentPayments").html("");
+		var Payments = Parse.Object.extend("Payments");
+		var payments = new Parse.Query(Payments);
+		payments.equalTo("recipientUsername", user.get('username'));
+		payments.find({
+		  success: function(results) {
+		    console.log("Successfully retrieved " + results.length + " scores.");
+		    // Do something with the returned Parse.Object values
+		    for (var i = 0; i < results.length; i++) { 
+		      var object = results[i];
+		      //console.log(object.id + ' - ' + object.get('playerName'));
+		      $("#recentPayments").html($("#recentPayments").html() + 
+											"<div class=\"panel panel-default\">" +
+											"<div class=\"panel-body\">" +
+											object.get('senderUsername') + ' - $' + object.get('moneyOwed') + 
+											"</div>" +
+											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
+											"</div>");
+		    }
+		  },
+		  error: function(error) {
+		    console.log("Error: " + error.code + " " + error.message);
+		  }
+		});
+
+		$("#sentPayments").html("");
+		var Payments = Parse.Object.extend("Payments");
+		var payments = new Parse.Query(Payments);
+		payments.equalTo("senderUsername", user.get('username'));
+		payments.find({
+		  success: function(results) {
+		    console.log("Successfully retrieved " + results.length + " scores.");
+		    // Do something with the returned Parse.Object values
+		    for (var i = 0; i < results.length; i++) { 
+		      var object = results[i];
+		      //console.log(object.id + ' - ' + object.get('playerName'));
+		      $("#sentPayments").html($("#sentPayments").html() + 
+											"<div class=\"panel panel-default\">" +
+											"<div class=\"panel-body\">" +
+											object.get('recipientUsername') + ' - $' + object.get('moneyOwed') + 
+											"</div>" +
+											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
+											"</div>");
+		    }
+		  },
+		  error: function(error) {
+		    console.log("Error: " + error.code + " " + error.message);
+		  }
+		});
+
+
+
 	 $("#bottomInfoHolder").append("</div>"+
 	 								"<div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Stats </u> </h4>" +
 									"<p style=\"text-align: center;\"> Friends (" + percentage + "%) </p>" +
 									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-success progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"" + percentage + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width:" + percentage +"%\">" +
+									"<div class=\"progress-bar progress-bar-danger progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"" + percentage + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"height: 20px; width: " + percentage +"%\">" +
 									"<span class=\"sr-only\">" + percentage + "% Complete (success)</span>" +
+
 									"</div>" +
+
 									"</div>" +
-									"<p style=\"text-align: center;\"> Transactions </p>" +
-									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-danger progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"20\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 20%\">" +
-									"<span class=\"sr-only\">20% Complete</span>" +
+									"<h3 style=\"text-align: center;\">" + numFriends + "/" + goalFriends + "</h3>"+
 									"</div>" +
-									"</div>" +
-									"<p style=\"text-align: center;\">  Rating </p>" +
-									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-warning progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"60\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 60%\">" +
-									"<span class=\"sr-only\">60% Complete (warning)</span>" +
-									"</div> " +
-									"</div>" +
+
 									"</div>" +
 									"<div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Recieved </u> </h4>" +
@@ -172,76 +218,51 @@ function addProfileInformation(user){
 									"</div>" +
 									"</div>");
 
+		$("#friendList").html("");
+		for(var i = 0; i < user.get('Friends').length; i++){
+			var User = Parse.Object.extend("User");
+			var query = new Parse.Query(User);
+			query.equalTo("username", user.get('Friends')[i]);
+			query.find({
+			  success: function(results) {
+			    //console.log("Successfully retrieved YOYOYO" + results.length + " scores.");
+			    // Do something with the returned Parse.Object values
+			    for (var j = 0; j < results.length; j++) { 
+			      var object = results[j];
+			      //console.log(object.id + ' - ' + object.get('email'));
+			      $("#friendList").html($("#friendList").html() + "<img style=\"\"src=\"" + get_gravatar(object.get('email'), 50) + "\" alt=\"\" class=\"img-circle\">" + " ");
+			    }
+			  },
+			  error: function(error) {
+			    console.log("Error: " + error.code + " " + error.message);
+			  }
+			});
+			
+		}
+
 		$("#confirmTranscription").click(function(){
 			var Payment = Parse.Object.extend("Payments");
 			var payment = new Payment();
 			payment.set('currentStatus', 'Requested');
 			payment.set('memo', $("#memoHolder").val());
-			payment.set('moneyOwed', parseInt($("#moneyHolder").val()));
-			payment.set("recipientUsername", $("#sendToHolder").val());
-			payment.set("senderUsername", user.get('username'));
+			payment.set('moneyOwed', parseFloat($("#moneyHolder").val()));
+			payment.set("recipientUsername", user.get('username'));
+			payment.set("senderUsername", $("#sendToHolder").val());
+			payment.set("rating", "Undecided");
 			payment.save(null, {
 			  success: function(request) {
 			    // Execute any logic that should take place after the object is saved.
-			    alert('Success');
+			    console.log('Success');
 			  },
 			  error: function(reqiest, error) {
 			    // Execute any logic that should take place if the save fails.
 			    // error is a Parse.Error with an error code and message.
-			    alert('Failed to create new object, with error code: ' + error.message);
+			    console.log('Failed to create new object, with error code: ' + error.message);
 			  }
 			});
 		});
 
-		$("#recentPayments").html("");
-		var Payments = Parse.Object.extend("Payments");
-		var payments = new Parse.Query(Payments);
-		payments.equalTo("recipientUsername", user.get('username'));
-		payments.find({
-		  success: function(results) {
-		    alert("Successfully retrieved " + results.length + " scores.");
-		    // Do something with the returned Parse.Object values
-		    for (var i = 0; i < results.length; i++) { 
-		      var object = results[i];
-		      //alert(object.id + ' - ' + object.get('playerName'));
-		      $("#recentPayments").html($("#recentPayments").html() + 
-											"<div class=\"panel panel-default\">" +
-											"<div class=\"panel-body\">" +
-											object.get('senderUsername') + ' - $' + object.get('moneyOwed') + 
-											"</div>" +
-											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
-											"</div>");
-		    }
-		  },
-		  error: function(error) {
-		    alert("Error: " + error.code + " " + error.message);
-		  }
-		});
-
-		$("#sentPayments").html("");
-		var Payments = Parse.Object.extend("Payments");
-		var payments = new Parse.Query(Payments);
-		payments.equalTo("senderUsername", user.get('username'));
-		payments.find({
-		  success: function(results) {
-		    alert("Successfully retrieved " + results.length + " scores.");
-		    // Do something with the returned Parse.Object values
-		    for (var i = 0; i < results.length; i++) { 
-		      var object = results[i];
-		      //alert(object.id + ' - ' + object.get('playerName'));
-		      $("#sentPayments").html($("#sentPayments").html() + 
-											"<div class=\"panel panel-default\">" +
-											"<div class=\"panel-body\">" +
-											object.get('recipientUsername') + ' - $' + object.get('moneyOwed') + 
-											"</div>" +
-											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
-											"</div>");
-		    }
-		  },
-		  error: function(error) {
-		    alert("Error: " + error.code + " " + error.message);
-		  }
-		});
+		
 		
 		$("#friendRequests").on("click", function(evt) {
 			$("#searchResultsHolder").html("");
@@ -249,13 +270,13 @@ function addProfileInformation(user){
 			query.equalTo("recipientUsername", user.get('username'));
 			query.find({
 			  success: function(results) {
-			  	//alert("LEngth is " + results.length);
+			  	//console.log("LEngth is " + results.length);
 			  	var amtOfRequestsList = [];
 			  	for (var i = 0; i < results.length && amtOfRequestsList < 1; i++) { 
 
 			      var object = results[i];
 
-			      //alert(object.id + ' - ' + object.get('username'));
+			      //console.log(object.id + ' - ' + object.get('username'));
 			      if(object.get('currentStatus') == "Requested"){		
 			      	amtOfRequestsList += object;	      
 
@@ -282,7 +303,7 @@ function addProfileInformation(user){
 						    	$("#searchResultsHolder").html("");
 
 						    	var friendList = user.get('Friends');
-						    	alert(obj.get('senderUsername'));
+						    	console.log(obj.get('senderUsername'));
 
 						    	var addOrNot = true;
 						    	for(var i = 0; i < friendList.length; i++){
@@ -334,18 +355,18 @@ function addProfileInformation(user){
 					friendRequest.save(null, {
 					  success: function(request) {
 					    // Execute any logic that should take place after the object is saved.
-					    alert('Success');
+					    console.log('Success');
 					  },
 					  error: function(reqiest, error) {
 					    // Execute any logic that should take place if the save fails.
 					    // error is a Parse.Error with an error code and message.
-					    alert('Failed to create new object, with error code: ' + error.message);
+					    console.log('Failed to create new object, with error code: ' + error.message);
 					  }
 					});
 				});
 			  },
 			  error: function(error) {
-			    alert("Error: " + error.code + " " + error.message);
+			    console.log("Error: " + error.code + " " + error.message);
 			  }
 			});
 
@@ -359,10 +380,10 @@ function addProfileInformation(user){
 			query.equalTo("username", $("#searchBox").val());
 			query.find({
 			  success: function(results) {
-			  	//alert("LEngth is " + results.length);
+			  	//console.log("LEngth is " + results.length);
 			  	for (var i = 0; i < results.length; i++) { 
 			      var object = results[i];
-			      //alert(object.id + ' - ' + object.get('username'));
+			      //console.log(object.id + ' - ' + object.get('username'));
 			    }
 
 			    $("#searchResultsHolder").html("<div class=\"panel panel-primary\">" +
@@ -388,18 +409,18 @@ function addProfileInformation(user){
 					friendRequest.save(null, {
 					  success: function(request) {
 					    // Execute any logic that should take place after the object is saved.
-					    alert('Success');
+					    console.log('Success');
 					  },
 					  error: function(reqiest, error) {
 					    // Execute any logic that should take place if the save fails.
 					    // error is a Parse.Error with an error code and message.
-					    alert('Failed to create new object, with error code: ' + error.message);
+					    console.log('Failed to create new object, with error code: ' + error.message);
 					  }
 					});
 				});
 			  },
 			  error: function(error) {
-			    alert("Error: " + error.code + " " + error.message);
+			    console.log("Error: " + error.code + " " + error.message);
 			  }
 			});
 
