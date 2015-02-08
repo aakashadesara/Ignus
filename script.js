@@ -77,9 +77,8 @@ function addProfileInformation(user){
 	  						   "<p><a class=\"btn btn-primary btn-lg\" href=\"#\" role=\"button\">Edit</a></p>" );
 	 $("#navbarHolder").append(" <div id=\"stats\"> <ul class=\"nav navbar-nav navbar-left\">" +
 								"<li><a href=\"#\">Profile </a></li>" +
-								"<li class=\"\"><a id=\"friendRequests\">Friends <span class=\"badge\"><div id=\"numberRequestBadges\"</span></a></li>" +
+								"<li class=\"\"><a id=\"friendRequests\">Requests  <span class=\"badge\"><div id=\"numberRequestBadges\"</span></a></li>" +
 								"<li class=\"\"><a href=\"#\">Messages <span class=\"badge\"><div id=\"numberMessagesBadge\"</span></a></li>" +
-								"<li class=\"\"><a href=\"#\">Payment</a></li> " +
 								"</ul>" +
 								"<ul class=\"nav navbar-nav navbar-right\">" +
 								"<form class=\"navbar-form navbar-left\" role=\"search\">" +
@@ -92,39 +91,64 @@ function addProfileInformation(user){
 								"</li>" +
 								"</ul> </div>"); 
 
-	 $("#bottomInfoHolder").append(" <div class=\"col-md-4\">" +
+	 $("#bottomInfoHolder").append(" <div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Statistics </u> </h4>" +
 									"<p style=\"text-align: center;\"> Friends </p>" +
 									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-success progress-bar-striped\" role=\"progressbar\" aria-valuenow=\"40\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 40%\">" +
+									"<div class=\"progress-bar progress-bar-success progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"40\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 40%\">" +
 									"<span class=\"sr-only\">40% Complete (success)</span>" +
 									"</div>" +
 									"</div>" +
 									"<p style=\"text-align: center;\"> Transactions </p>" +
 									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-danger progress-bar-striped\" role=\"progressbar\" aria-valuenow=\"20\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 20%\">" +
+									"<div class=\"progress-bar progress-bar-danger progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"20\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 20%\">" +
 									"<span class=\"sr-only\">20% Complete</span>" +
 									"</div>" +
 									"</div>" +
 									"<p style=\"text-align: center;\">  Rating </p>" +
 									"<div class=\"progress\">" +
-									"<div class=\"progress-bar progress-bar-warning progress-bar-striped\" role=\"progressbar\" aria-valuenow=\"60\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 60%\">" +
+									"<div class=\"progress-bar progress-bar-warning progress-bar-striped active\" role=\"progressbar\" aria-valuenow=\"60\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 60%\">" +
 									"<span class=\"sr-only\">60% Complete (warning)</span>" +
 									"</div> " +
 									"</div>" +
 									"</div>" +
-									"<div class=\"col-md-4\">" +
+									"<div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Recent Payments </u> </h4>" +
+									"<div style=\"height: 25%; overflow-y: scroll; background-color: ; \" id=\"recentPayments\"></div>" + 
 									"</div>" +
-									"<div class=\"col-md-4\">" +
+									"<div class=\"col-md-2\">" +
 									"<h4 style=\"text-align: center\"> <u> Recent Reviews </u> </h4>" +
 									"</div>");
 
+		$("#recentPayments").html("");
+		var Payments = Parse.Object.extend("Payments");
+		var payments = new Parse.Query(Payments);
+		payments.equalTo("recipientUsername", user.get('username'));
+		payments.find({
+		  success: function(results) {
+		    alert("Successfully retrieved " + results.length + " scores.");
+		    // Do something with the returned Parse.Object values
+		    for (var i = 0; i < results.length; i++) { 
+		      var object = results[i];
+		      //alert(object.id + ' - ' + object.get('playerName'));
+		      $("#recentPayments").html($("#recentPayments").html() + 
+											"<div class=\"panel panel-default\">" +
+											"<div class=\"panel-body\">" +
+											object.get('senderUsername') + ' - ' + object.get('moneyOwed') + 
+											"</div>" +
+											"<div class=\"panel-footer\">" + object.get("memo") + "<br>" + object.updatedAt + "</div>" +
+											"</div>");
+		    }
+		  },
+		  error: function(error) {
+		    alert("Error: " + error.code + " " + error.message);
+		  }
+		});
 		
 		$("#friendRequests").on("click", function(evt) {
 			$("#searchResultsHolder").html("");
 		  	var query = new Parse.Query('FriendRequests');
-			query.equalTo("recipientUsername", user.get('username'));
+			query.equalTo("recipientUsername", "tanay");
 			query.find({
 			  success: function(results) {
 			  	//alert("LEngth is " + results.length);
